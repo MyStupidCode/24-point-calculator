@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>24 Point Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+      padding: 50px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    input[type="number"] {
+      width: 60px;
+      padding: 10px;
+      margin: 10px;
+      font-size: 1.2em;
+      text-align: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #result {
+      margin-top: 30px;
+      font-size: 1.2em;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🧮 24 Point Game</h1>
+  <p>Enter 4 numbers between 1 and 13:</p>
+
+  <input type="number" id="num1" min="1" max="13">
+  <input type="number" id="num2" min="1" max="13">
+  <input type="number" id="num3" min="1" max="13">
+  <input type="number" id="num4" min="1" max="13">
+  <br><br>
+  <button onclick="check24()">Check</button>
+
+  <div id="result"></div>
+
+  <script>
+    function check24() {
+      const nums = [
+        parseInt(document.getElementById("num1").value),
+        parseInt(document.getElementById("num2").value),
+        parseInt(document.getElementById("num3").value),
+        parseInt(document.getElementById("num4").value)
+      ];
+
+      if (nums.some(isNaN) || nums.length !== 4 || !nums.every(n => n >= 1 && n <= 13)) {
+        document.getElementById("result").innerText = "❗ Please enter 4 valid numbers between 1 and 13.";
+        return;
+      }
+
+      const result = solve24(nums);
+      if (result) {
+        document.getElementById("result").innerText = "✅ Solution: " + result;
+      } else {
+        document.getElementById("result").innerText = "❌ No solution found.";
+      }
+    }
+
+    function solve24(nums) {
+      const ops = ["+", "-", "*", "/"];
+
+      function generateExpressions(a, b, c, d, op1, op2, op3) {
+        return [
+          `(${a}${op1}${b})${op2}(${c}${op3}${d})`,
+          `(${a}${op1}(${b}${op2}${c}))${op3}${d}`,
+          `${a}${op1}(((${b}${op2}${c})${op3}${d}))`,
+          `${a}${op1}(${b}${op2}(${c}${op3}${d}))`,
+          `(((${a}${op1}${b})${op2}${c})${op3}${d})`
+        ];
+      }
+
+      function permute(arr) {
+        if (arr.length === 1) return [arr];
+        const result = [];
+        for (let i = 0; i < arr.length; i++) {
+          const rest = permute(arr.slice(0, i).concat(arr.slice(i + 1)));
+          for (const r of rest) {
+            result.push([arr[i], ...r]);
+          }
+        }
+        return result;
+      }
+
+      function product(arr, repeat) {
+        if (repeat === 1) return arr.map(el => [el]);
+        const result = [];
+        const prev = product(arr, repeat - 1);
+        for (const el of arr) {
+          for (const p of prev) {
+            result.push([el, ...p]);
+          }
+        }
+        return result;
+      }
+
+      const permutations = permute(nums);
+      for (const numSet of permutations) {
+        for (const opsSet of product(ops, 3)) {
+          const [a, b, c, d] = numSet;
+          const [op1, op2, op3] = opsSet;
+          const expressions = generateExpressions(a, b, c, d, op1, op2, op3);
+
+          for (const expr of expressions) {
+            try {
+              if (Math.abs(eval(expr) - 24) < 1e-6) {
+                return expr;
+              }
+            } catch (e) {
+              // ignore errors like division by zero
+            }
+          }
+        }
+      }
+      return null;
+    }
+  </script>
+
+</body>
+</html>
